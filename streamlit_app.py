@@ -6,7 +6,7 @@ import numpy as np
 from datetime import datetime, timedelta  
 import io  
 
-st.title("Options Trading Analysis")  
+st.title("Entry Time Analysis")  
 st.write("Drag and drop your CSV file to visualize Normalized P/L by day of week and time.")  
   
 # File uploader widget for drag and drop  
