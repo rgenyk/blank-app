@@ -49,16 +49,16 @@ if uploaded_file is not None:
           
         # Combine the two pivot tables:  
         overall_table = rounded_pivot_table.copy()  
-        overall_table.columns = ['Overall ' + col for col in overall_table.columns]  
+        overall_table.columns = ['Last Year ' + col for col in overall_table.columns]  
         recent_table = recent_pivot_table.copy()  
-        recent_table.columns = ['Recent ' + col for col in recent_table.columns]  
+        recent_table.columns = ['Last 90 ' + col for col in recent_table.columns]  
         combined_table = overall_table.join(recent_table, how='outer')  
           
         # Reorder columns: for each day, group Overall and Recent side by side  
         ordered_columns = []  
         for day in ordered_days:  
-            overall_col = 'Overall ' + day  
-            recent_col = 'Recent ' + day  
+            overall_col = 'Last Year ' + day  
+            recent_col = 'Last 90 ' + day  
             if overall_col in combined_table.columns:  
                 ordered_columns.append(overall_col)  
             if recent_col in combined_table.columns:  
@@ -66,16 +66,19 @@ if uploaded_file is not None:
         combined_table = combined_table[ordered_columns]  
           
         # Display the combined table  
-        st.subheader("Combined Table (Overall & Recent)")  
-        st.dataframe(combined_table)  
+        # st.subheader("Combined Table (365 & 90)")  
+        # st.dataframe(combined_table)  
           
         # Create a heatmap from the combined table  
         plt.figure(figsize=(14, 10))  
-        sns.heatmap(combined_table, annot=True, fmt='.0f', cmap='coolwarm',   
+        ax = sns.heatmap(combined_table, annot=True, fmt='.0f', cmap='coolwarm',   
                     cbar_kws={'label': 'Normalized P/L'}, linewidths=0.5)  
-        plt.title("Overall vs Recent Normalized P/L Heatmap", fontsize=20, pad=15)  
-        plt.xlabel("Day of Week (Overall and Recent)", fontsize=16, labelpad=10)  
-        plt.ylabel("Time Opened", fontsize=16, labelpad=10)  
+        ax.xaxis.tick_top()
+        ax.xaxis.set_label_position('top')
+        plt.xticks(rotation=45, ha='left')
+        plt.title("365d vs 90d Normalized P/L Heatmap", fontsize=20, pad=15)  
+        plt.xlabel("Day of Week", fontsize=16, labelpad=10)  
+        plt.ylabel("Time Opened", fontsize=16, labelpad=10)
         plt.tight_layout()  
           
         # Render the plot in Streamlit  
