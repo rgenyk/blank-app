@@ -5,7 +5,8 @@ import matplotlib.pyplot as plt
 import numpy as np  
 from datetime import datetime, timedelta  
 import io  
-
+from matplotlib.colors import ListedColormap  
+  
 st.title("Entry Time Analysis")  
 st.write("Drag and drop your CSV file to visualize Normalized P/L by day of week and time.")  
   
@@ -21,7 +22,7 @@ if uploaded_file is not None:
         # Optionally display the raw data  
         if st.checkbox("Show raw data"):  
             st.dataframe(df.head())  
-  
+          
         # Data processing:  
         # Convert 'Date Opened' to datetime and create 'Day of Week' column  
         df['Date Opened'] = pd.to_datetime(df['Date Opened'])  
@@ -32,53 +33,49 @@ if uploaded_file is not None:
         df['Normalized P/L'] = (df['P/L'] / df['Premium']) * max_premium  
           
         # Create the overall pivot table: index = 'Time Opened', columns = day of week (Monday to Friday)  
-        pivot_table = df.pivot_table(index='Time Opened', columns='Day of Week', values='Normalized P/L', aggfunc='mean')  
+        pivot_table = df.pivot_table(index='Time Opened', columns='Day of Week',   
+                                     values='Normalized P/L', aggfunc='mean')  
         rounded_pivot_table = pivot_table.round(0)  
         ordered_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']  
         # Filter columns that exist in the data  
         existing_days = [day for day in ordered_days if day in rounded_pivot_table.columns]  
-        rounded_pivot_table = rounded_pivot_table[existing_days]  
+        overall_table = rounded_pivot_table[existing_days].copy()  
+        # Rename columns by adding "365d" prefix  
+        overall_table = overall_table.rename(columns=lambda x: "365d " + x)  
           
-        # Create a second pivot table for entries within the last 90 days  
+        # Create a second pivot table for entries within the last 90 days   
         ninety_days_ago = datetime.now() - timedelta(days=90)  
         recent_df = df[df['Date Opened'] >= ninety_days_ago]  
-        recent_pivot_table = recent_df.pivot_table(index='Time Opened', columns='Day of Week', values='Normalized P/L', aggfunc='mean').round(0)  
-        # Make sure to only include the ordered days that exist in recent data  
-        existing_recent_days = [day for day in ordered_days if day in recent_pivot_table.columns]  
-        recent_pivot_table = recent_pivot_table[existing_recent_days]  
+        recent_pivot_table = recent_df.pivot_table(index='Time Opened', columns='Day of Week',   
+                                                   values='Normalized P/L', aggfunc='mean')  
+        rounded_recent_table = recent_pivot_table.round(0)  
+        # Filter and rename columns with "90d" prefix  
+        recent_table = rounded_recent_table[existing_days].copy()  
+        recent_table = recent_table.rename(columns=lambda x: "90d " + x)  
           
-        # Combine the two pivot tables:  
-        overall_table = rounded_pivot_table.copy()  
-        overall_table.columns = ['Last Year ' + col for col in overall_table.columns]  
-        recent_table = recent_pivot_table.copy()  
-        recent_table.columns = ['Last 90 ' + col for col in recent_table.columns]  
-        combined_table = overall_table.join(recent_table, how='outer')  
+        # Combine the two tables side by side on the index  
+        combined_table = overall_table.join(recent_table)  
           
-        # Reorder columns: for each day, group Overall and Recent side by side  
-        ordered_columns = []  
-        for day in ordered_days:  
-            overall_col = 'Last Year ' + day  
-            recent_col = 'Last 90 ' + day  
-            if overall_col in combined_table.columns:  
-                ordered_columns.append(overall_col)  
-            if recent_col in combined_table.columns:  
-                ordered_columns.append(recent_col)  
-        combined_table = combined_table[ordered_columns]  
+        # --- Create a mask matrix for custom coloring ---  
+        # For each column calculate column average and mark as 1 when cell > average, else 0.  
+        mask_matrix = combined_table.copy()  
+        for col in combined_table.columns:  
+            col_avg = combined_table[col].mean()  
+            mask_matrix[col] = np.where(combined_table[col] > col_avg, 1, 0)  
           
-        # Display the combined table  
-        # st.subheader("Combined Table (365 & 90)")  
-        # st.dataframe(combined_table)  
+        # Create a binary custom colormap: 0 -> white, 1 -> green  
+        cmap = ListedColormap(["white", "green"])  
           
-        # Create a heatmap from the combined table  
+        # --- Create a heatmap using the mask with annotations from combined_table ---  
         plt.figure(figsize=(14, 10))  
-        ax = sns.heatmap(combined_table, annot=True, fmt='.0f', cmap='coolwarm',   
-                    cbar_kws={'label': 'Normalized P/L'}, linewidths=0.5)  
-        ax.xaxis.tick_top()
-        ax.xaxis.set_label_position('top')
-        plt.xticks(rotation=45, ha='left')
+        ax = sns.heatmap(mask_matrix, annot=combined_table, fmt='.0f',   
+                         cmap=cmap, cbar=False, vmin=0, vmax=1, linewidths=0.5)  
+        ax.xaxis.tick_top()                # Move the x-axis labels to the top  
+        ax.xaxis.set_label_position('top') # Ensure any x-axis label appears at the top  
+        plt.xticks(rotation=45, ha='left')  
         plt.title("365d vs 90d Normalized P/L Heatmap", fontsize=20, pad=15)  
         plt.xlabel("Day of Week", fontsize=16, labelpad=10)  
-        plt.ylabel("Time Opened", fontsize=16, labelpad=10)
+        plt.ylabel("Time Opened", fontsize=16, labelpad=10)  
         plt.tight_layout()  
           
         # Render the plot in Streamlit  
@@ -99,15 +96,16 @@ else:
 with st.sidebar:  
     st.header("About This App")  
     st.write(  
-        "This application analyzes options trading data to visualize performance patterns by day of the week and time of day.\n\n"  
-        "The heatmap displays both overall historical performance and recent performance (last 90 days), "  
+        "This application analyzes options trading data to visualize performance patterns "  
+        "by day of the week and time of day.\n\n"  
+        "The heatmap displays both overall historical performance (365d) and recent performance (90d), "  
         "with Normalized P/L computed as: $$\\text{Normalized P/L} = \\left(\\frac{P/L}{Premium}\\right) \\times \\max(Premium)$$."  
     )  
     st.header("Instructions")  
     st.write(  
         "1. Upload your CSV file using the drag and drop area above.\n"  
         "2. Optionally display the raw data.\n"  
-        "3. The app processes the data, generating two pivot tables and combining them.\n"  
-        "4. The resulting heatmap allows you to compare Overall vs. Recent performance side by side for each day of the week.\n"  
+        "3. The app processes the data, generating two pivot tables (365d and 90d) and combines them.\n"  
+        "4. The heatmap highlights cells in green if they are above the column average.\n"  
         "5. You can download the heatmap as a PNG file."  
     )  
