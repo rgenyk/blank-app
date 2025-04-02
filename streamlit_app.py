@@ -105,10 +105,10 @@ if uploaded_file is not None:
             for col in recent_columns:
                 mask_recent[col] = np.where(combined_table[col] > recent_mean, 1, 0)
 
-            st.write("Overall mean (used for mask): " + str(overall_mean))
-            st.write("Recent mean (used for mask): " + str(recent_mean))
+            st.write("Overall mean (used for mask): " + str(overall_mean.round(0)))
+            st.write("Recent mean (used for mask): " + str(recent_mean.round(0)))
 
-              
+            combined_mask = pd.concat([mask_overall, mask_recent], axis=1)   
             # For each column, mark cells as 1 if they're above the column average  
             # for col in combined_table.columns:  
             #    col_avg = combined_table[col].mean()  
@@ -119,7 +119,7 @@ if uploaded_file is not None:
               
             # Create a heatmap from the combined table  
             plt.figure(figsize=(14, 10))  
-            ax = sns.heatmap(mask, annot=combined_table, fmt='.0f', cmap=cmap,  
+            ax = sns.heatmap(combined_mask, annot=combined_table, fmt='.0f', cmap=cmap,  
                              cbar=False, vmin=0, vmax=1, linewidths=0.5)  
             ax.xaxis.tick_top()  
             ax.xaxis.set_label_position('top')  
