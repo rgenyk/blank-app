@@ -109,11 +109,7 @@ if uploaded_file is not None:
             st.write("Recent mean (used for mask): " + str(recent_mean.round(0)))
 
             combined_mask = pd.concat([mask_overall, mask_recent], axis=1)   
-            # For each column, mark cells as 1 if they're above the column average  
-            # for col in combined_table.columns:  
-            #    col_avg = combined_table[col].mean()  
-            #    mask[col] = np.where(combined_table[col] > col_avg, 1, 0)  
-              
+                         
             # Create a custom colormap: white for 0, green for 1  
             cmap = ListedColormap(['white', 'green'])  
               
