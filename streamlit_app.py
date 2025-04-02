@@ -16,17 +16,19 @@ uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
 if uploaded_file is not None:  
     try:  
         # Read the CSV file into a DataFrame  
-        df = pd.read_csv(uploaded_file)  
+        df_unfiltered = pd.read_csv(uploaded_file)  
         st.success("File uploaded successfully!")  
           
         # Optionally display the raw data  
         if st.checkbox("Show raw data"):  
-            st.dataframe(df.head())  
+            st.dataframe(df_unfiltered.head())  
           
         # Data processing:  
         # Convert 'Date Opened' to datetime and create 'Day of Week' column  
-        df['Date Opened'] = pd.to_datetime(df['Date Opened'])  
-        df['Day of Week'] = df['Date Opened'].dt.day_name()  
+        df_unfiltered['Date Opened'] = pd.to_datetime(df_unfiltered['Date Opened'])  
+        df_unfiltered['Day of Week'] = df_unfiltered['Date Opened'].dt.day_name()
+        # Exclude rows where 'Legs' contains 'BTO'
+        df = df_unfiltered[df_unfiltered['Legs'].str.contains('BTO', na=False)]  
           
         # Calculate Normalized P/L using: (P/L / Premium) * max(Premium)  
         max_premium = df['Premium'].max()  
