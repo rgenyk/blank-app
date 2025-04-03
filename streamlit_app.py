@@ -35,12 +35,12 @@ if uploaded_file is not None:
           
         # Calculate Normalized P/L using: (P/L / Premium) * max(Premium)  
         # max_premium = df['Premium'].max()  
-        df['Normalized P/L %'] = (df['P/L'] / df['Premium']) # * max_premium  
+        df['PCR'] = (df['P/L'] / df['Premium']) # * max_premium  
           
         # Add a radio button to select between P/L and Normalized P/L  
         metric_option = st.radio(  
             "Select metric to visualize:",  
-            ["P/L", "Normalized P/L %"],  
+            ["P/L", "PCR"],  
             horizontal=True  
         )  
           
@@ -89,19 +89,30 @@ if uploaded_file is not None:
             combined_table = combined_table[ordered_columns]  
               
             # Create a mask for values above average  
-            mask = pd.DataFrame(0, index=combined_table.index, columns=combined_table.columns)  
+            #mask = pd.DataFrame(0, index=combined_table.index, columns=combined_table.columns)  
               
             # For each column, mark cells as 1 if they're above the column average  
-            for col in combined_table.columns:  
-                col_avg = combined_table[col].mean()  
-                mask[col] = np.where(combined_table[col] > col_avg, 1, 0)  
+            #for col in combined_table.columns:  
+            #    col_avg = combined_table[col].mean()  
+            #    mask[col] = np.where(combined_table[col] > col_avg, 1, 0)  
+
+            # Create a mask for values above the overall dataset average  
+            overall_avg = combined_table.values.mean()  
+            mask = pd.DataFrame(0, index=combined_table.index, columns=combined_table.columns)  
+            # Mark cells as 1 if they're above the overall average  
+            mask = np.where(combined_table > overall_avg, 1, 0)  
+            # Convert the numpy array back to a DataFrame with the same index and columns as combined_table  
+            mask = pd.DataFrame(mask, index=combined_table.index, columns=combined_table.columns) 
               
             # Create a custom colormap: white for 0, green for 1  
             cmap = ListedColormap(['white', 'green'])  
+
+            # Format the data based on the metric option chosen
+            data_format = '.2%' if metric_option == 'PCR' else '.0f'
               
             # Create a heatmap from the combined table  
             plt.figure(figsize=(14, 10))  
-            ax = sns.heatmap(mask, annot=combined_table, fmt='.2f', cmap=cmap,  
+            ax = sns.heatmap(mask, annot=combined_table, fmt=data_format, cmap=cmap,  
                              cbar=False, vmin=0, vmax=1, linewidths=0.5)  
             ax.xaxis.tick_top()  
             ax.xaxis.set_label_position('top')  
