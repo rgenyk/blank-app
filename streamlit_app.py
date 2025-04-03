@@ -24,21 +24,23 @@ if uploaded_file is not None:
             st.dataframe(df.head())  
           
         # Data processing:  
+        
+        # Exclude rows where 'Legs' contains 'BTO'
         df = df[~df['Legs'].str.contains('BTO', na=False)] 
+        
         # Convert 'Date Opened' to datetime and create 'Day of Week' column  
         df['Date Opened'] = pd.to_datetime(df['Date Opened'])  
         df['Day of Week'] = df['Date Opened'].dt.day_name()
-        # Exclude rows where 'Legs' contains 'BTO'
  
           
         # Calculate Normalized P/L using: (P/L / Premium) * max(Premium)  
-        max_premium = df['Premium'].max()  
-        df['Normalized P/L'] = (df['P/L'] / df['Premium']) * max_premium  
+        # max_premium = df['Premium'].max()  
+        df['Normalized P/L %'] = (df['P/L'] / df['Premium']) # * max_premium  
           
         # Add a radio button to select between P/L and Normalized P/L  
         metric_option = st.radio(  
             "Select metric to visualize:",  
-            ["P/L", "Normalized P/L"],  
+            ["P/L", "Normalized P/L %"],  
             horizontal=True  
         )  
           
@@ -48,7 +50,7 @@ if uploaded_file is not None:
         # Create the overall pivot table: index = 'Time Opened', columns = day of week (Monday to Friday)  
         pivot_table = df.pivot_table(index='Time Opened', columns='Day of Week',   
                                      values=value_column, aggfunc='mean')  
-        rounded_pivot_table = pivot_table.round(0)  
+        rounded_pivot_table = pivot_table.round(3)  
         ordered_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']  
         # Filter columns that exist in the data  
         existing_days = [day for day in ordered_days if day in rounded_pivot_table.columns]  
@@ -61,7 +63,7 @@ if uploaded_file is not None:
         if not recent_df.empty:  
             recent_pivot_table = recent_df.pivot_table(index='Time Opened', columns='Day of Week',   
                                                       values=value_column, aggfunc='mean')  
-            recent_rounded_pivot_table = recent_pivot_table.round(0)  
+            recent_rounded_pivot_table = recent_pivot_table.round(3)  
             # Filter columns that exist in the recent data  
             recent_existing_days = [day for day in ordered_days if day in recent_rounded_pivot_table.columns]  
             recent_rounded_pivot_table = recent_rounded_pivot_table[recent_existing_days]  
