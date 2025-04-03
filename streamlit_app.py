@@ -101,7 +101,7 @@ if uploaded_file is not None:
               
             # Create a heatmap from the combined table  
             plt.figure(figsize=(14, 10))  
-            ax = sns.heatmap(mask, annot=combined_table, fmt='.0f', cmap=cmap,  
+            ax = sns.heatmap(mask, annot=combined_table, fmt='.2f', cmap=cmap,  
                              cbar=False, vmin=0, vmax=1, linewidths=0.5)  
             ax.xaxis.tick_top()  
             ax.xaxis.set_label_position('top')  
