@@ -87,35 +87,19 @@ if uploaded_file is not None:
             combined_table = combined_table[ordered_columns]  
               
             # Create a mask for values above average  
-            # mask = pd.DataFrame(0, index=combined_table.index, columns=combined_table.columns)  
-            
-            # Create mask for "Overall" columns
-            overall_columns = [col for col in combined_table.columns if 'Overall' in col]
-            overall_mean = combined_table[overall_columns].values.mean()
-
-            mask_overall = pd.DataFrame(0, index=combined_table.index, columns=overall_columns)
-            for col in overall_columns:
-                mask_overall[col] = np.where(combined_table[col] > overall_mean, 1, 0)
-
-            # Create mask for "Recent" columns
-            recent_columns = [col for col in combined_table.columns if 'Recent' in col]
-            recent_mean = combined_table[recent_columns].values.mean()
-
-            mask_recent = pd.DataFrame(0, index=combined_table.index, columns=recent_columns)
-            for col in recent_columns:
-                mask_recent[col] = np.where(combined_table[col] > recent_mean, 1, 0)
-
-            st.write("Overall mean (used for mask): " + str(overall_mean.round(0)))
-            st.write("Recent mean (used for mask): " + str(recent_mean.round(0)))
-
-            combined_mask = pd.concat([mask_overall, mask_recent], axis=1)   
-                         
+            mask = pd.DataFrame(0, index=combined_table.index, columns=combined_table.columns)  
+              
+            # For each column, mark cells as 1 if they're above the column average  
+            for col in combined_table.columns:  
+                col_avg = combined_table[col].mean()  
+                mask[col] = np.where(combined_table[col] > col_avg, 1, 0)  
+              
             # Create a custom colormap: white for 0, green for 1  
             cmap = ListedColormap(['white', 'green'])  
               
             # Create a heatmap from the combined table  
             plt.figure(figsize=(14, 10))  
-            ax = sns.heatmap(combined_mask, annot=combined_table, fmt='.0f', cmap=cmap,  
+            ax = sns.heatmap(mask, annot=combined_table, fmt='.0f', cmap=cmap,  
                              cbar=False, vmin=0, vmax=1, linewidths=0.5)  
             ax.xaxis.tick_top()  
             ax.xaxis.set_label_position('top')  
