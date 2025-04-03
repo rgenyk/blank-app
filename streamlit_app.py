@@ -89,7 +89,7 @@ if uploaded_file is not None:
             combined_table = combined_table[ordered_columns]  
               
             # Create a mask for values above the overall dataset average  
-            overall_avg = combined_table.values.mean()  
+            overall_avg = overall_table.values.mean()  
             
             # Create a mask starting with 0 (default)  
             mask = np.zeros(combined_table.shape, dtype=int)         
@@ -97,13 +97,23 @@ if uploaded_file is not None:
             # Mark cells as 1 if they're above the overall average  
             mask = np.where(combined_table.values > overall_avg, 1, mask)  
             
-            # Then, mark cells as 2 if both the overall and recent values exceed their averages  
-            both_condition = (combined_table.values > overall_avg) & (recent_table.values > overall_avg)  
-            mask[both_condition] = 2  
+            # Mark cells as 2 if both the overall and recent values exceed their averages
+            # Process column pairs (1&2, 3&4, 5&6, etc.)  
             
+            # Note: Python uses 0-based indexing, so columns 1&2 are at indices 0&1  
+            for i in range(0, combined_table.shape[1], 2):  
+                # Check if we have a complete pair (to handle odd number of columns)  
+                if i + 1 < combined_table.shape[1]:  
+                # For each row, check if both columns in the pair are above average  
+                    for row in range(combined_table.shape[0]):  
+                        if (combined_table.iloc[row, i] > overall_avg and   
+                            combined_table.iloc[row, i+1] > overall_avg):  
+                            # Set both columns in this row to 2  
+                            mask[row, i] = 2  
+                            mask[row, i+1] = 2  
+
             # Convert the numpy array back to a DataFrame with the same index and columns as combined_table  
-            mask = pd.DataFrame(mask, index=combined_table.index, columns=combined_table.columns) 
-            #mask = pd.DataFrame(0, index=combined_table.index, columns=combined_table.columns)  
+            mask = pd.DataFrame(mask, index=combined_table.index, columns=combined_table.columns)  
             
 
             # Create a custom colormap: white for 0, lightgreen for 1, green for 2  
@@ -115,7 +125,7 @@ if uploaded_file is not None:
             # Create a heatmap from the combined table  
             plt.figure(figsize=(14, 10))  
             ax = sns.heatmap(mask, annot=combined_table, fmt=data_format, cmap=cmap,  
-                             cbar=False, vmin=0, vmax=1, linewidths=0.5)  
+                             cbar=False, vmin=0, vmax=2, linewidths=0.5)  
             ax.xaxis.tick_top()  
             ax.xaxis.set_label_position('top')  
             plt.xticks(rotation=45, ha='left')  
@@ -133,7 +143,7 @@ if uploaded_file is not None:
             buf.seek(0)  
             st.download_button(f"Download {metric_option} Heatmap", data=buf,   
                               file_name=f"trading_{metric_option.lower().replace('/', '_')}_heatmap.png",   
-                              mime="image/png")  
+                              mime="image/png")
         else:  
             st.warning("No data found within the last 90 days. Cannot create recent performance table.")  
               
