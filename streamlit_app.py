@@ -88,24 +88,26 @@ if uploaded_file is not None:
               
             combined_table = combined_table[ordered_columns]  
               
-            # Create a mask for values above average  
-            #mask = pd.DataFrame(0, index=combined_table.index, columns=combined_table.columns)  
-              
-            # For each column, mark cells as 1 if they're above the column average  
-            #for col in combined_table.columns:  
-            #    col_avg = combined_table[col].mean()  
-            #    mask[col] = np.where(combined_table[col] > col_avg, 1, 0)  
-
             # Create a mask for values above the overall dataset average  
             overall_avg = combined_table.values.mean()  
-            mask = pd.DataFrame(0, index=combined_table.index, columns=combined_table.columns)  
+            
+            # Create a mask starting with 0 (default)  
+            mask = np.zeros(combined_table.shape, dtype=int)         
+            
             # Mark cells as 1 if they're above the overall average  
-            mask = np.where(combined_table > overall_avg, 1, 0)  
+            mask = np.where(combined_table.values > overall_avg, 1, mask)  
+            
+            # Then, mark cells as 2 if both the overall and recent values exceed their averages  
+            both_condition = (combined_table.values > overall_avg) & (recent_table.values > overall_avg)  
+            mask[both_condition] = 2  
+            
             # Convert the numpy array back to a DataFrame with the same index and columns as combined_table  
             mask = pd.DataFrame(mask, index=combined_table.index, columns=combined_table.columns) 
-              
-            # Create a custom colormap: white for 0, green for 1  
-            cmap = ListedColormap(['white', 'green'])  
+            #mask = pd.DataFrame(0, index=combined_table.index, columns=combined_table.columns)  
+            
+
+            # Create a custom colormap: white for 0, lightgreen for 1, green for 2  
+            cmap = ListedColormap(['white', 'lightgreen', 'green'])  
 
             # Format the data based on the metric option chosen
             data_format = '.2%' if metric_option == 'PCR' else '.0f'
