@@ -144,6 +144,56 @@ if uploaded_file is not None:
             st.download_button(f"Download {metric_option} Heatmap", data=buf,   
                               file_name=f"trading_{metric_option.lower().replace('/', '_')}_heatmap.png",   
                               mime="image/png")
+            
+            # Now, extract times by day of week where mask value is 2
+            results = {}
+
+            # Process each day of the week
+            for day in ordered_days:
+                # Get columns for this day (both 365d and 90d)
+                day_cols = [col for col in mask.columns if day in col]
+                
+                # Find rows where any column for this day has mask value 2
+                mask_value_2_times = []
+                for time in mask.index:
+                    # Check if any column for this day has mask value 2 for this time
+                    if any(mask.loc[time, col] == 2 for col in day_cols):
+                        mask_value_2_times.append(time)
+                
+                # Store the results
+                results[day] = mask_value_2_times
+
+            # Create a formatted table with days as columns and times underneath
+            print("\
+            Times by day of week where mask value is 2:")
+            # Find the maximum number of times for any day
+            max_times = max(len(times) for times in results.values())
+
+            # Create a table with days as columns and times as rows
+            table_data = []
+            for i in range(max_times):
+                row = []
+                for day in ordered_days:
+                    if i < len(results[day]):
+                        row.append(results[day][i])
+                    else:
+                        row.append("")
+                table_data.append(row)
+
+            # Print the table with tabulate
+            #print(tabulate(table_data, headers=days_of_week, tablefmt="grid"))
+
+            # Alternative: Create a DataFrame for better formatting
+            times_df = pd.DataFrame(columns=ordered_days)
+            for day in ordered_days:
+                times_df[day] = pd.Series(results[day] + [""] * (max_times - len(results[day])))
+
+            #print("\
+            #DataFrame format:")
+            #st.write(times_df.to_string(index=False))
+            st.title("Optimal Entry Times") 
+            times_df        
+        
         else:  
             st.warning("No data found within the last 90 days. Cannot create recent performance table.")  
               
@@ -159,17 +209,17 @@ with st.sidebar:
         "This application analyzes options trading data to visualize performance patterns "  
         "by day of the week and time of day.\n\n"  
         "The heatmap displays both overall historical performance (365d) and recent performance (90d), "  
-        f"with metrics computed based on your selection (P/L or Normalized P/L)."  
+        f"with metrics computed based on your selection (P/L or PCR)."  
     )  
       
     # Add explanation for Normalized P/L  
-    st.markdown("**Normalized P/L** is calculated as:")  
-    st.latex(r"\text{Normalized P/L} = \left(\frac{P/L}{Premium}\right) \times \max(Premium)")  
+    st.markdown("**PCR (Premium Capture Rate)** is calculated as:")  
+    st.latex(r"\text{PCR} = \left(\frac{P/L}{Premium}\right) \times")  
       
     st.header("Instructions")  
     st.write(  
         "1. Upload your CSV file using the drag and drop area above.\n"  
-        "2. Select which metric to visualize (P/L or Normalized P/L).\n"  
+        "2. Select which metric to visualize (P/L or PCR).\n"  
         "3. The app processes the data, generating two pivot tables (365d and 90d) and combines them.\n"  
         "4. The heatmap highlights cells in green if they are above the column average.\n"  
         "5. You can download the heatmap as a PNG file."  
