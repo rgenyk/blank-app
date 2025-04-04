@@ -205,15 +205,19 @@ else:
 with st.sidebar:  
     st.header("About This App")  
     st.write(  
-        "This application analyzes options trading data to visualize performance patterns "  
+        "This application analyzes OO backtest trade logs to visualize performance patterns "  
         "by day of the week and time of day.\n\n"  
         "The heatmap displays both overall historical performance (365d) and recent performance (90d), "  
-        f"with metrics computed based on your selection (P/L or PCR)."  
+        f"with metrics computed based on your selection (P/L or PCR).\n\n"  
+        "This was designed for simple 0DTE credit selling strategies."
     )  
       
-    # Add explanation for Normalized P/L  
+    # Add explanation for Metrics  
+    st.markdown("**P/L (Profit / Loss)** is simply the average $ profit or loss "
+                "for each entry time and day of the week.\n\n")  
     st.markdown("**PCR (Premium Capture Rate)** is calculated as:")  
-    st.latex(r"\text{PCR} = \left(\frac{P/L}{Premium}\right) \times")  
+    st.latex(r"\text{PCR} = \left(\frac{P/L}{Premium Collected}\right)")  
+    st.markdown("Each individual trade is calculated first, and the resulting PCR's are averaged in the table.")  
       
     st.header("Instructions")  
     st.write(  
