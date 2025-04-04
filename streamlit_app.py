@@ -25,8 +25,8 @@ if uploaded_file is not None:
           
         # Data processing:  
         
-        # Exclude rows where 'Legs' contains 'BTO'
-        df = df[~df['Legs'].str.contains('BTO', na=False)] 
+        # Only include rows where 'Legs' contains 'STO'
+        df = df[df['Legs'].str.contains('STO', na=False)] 
         
         # Convert 'Date Opened' to datetime and create 'Day of Week' column  
         df['Date Opened'] = pd.to_datetime(df['Date Opened'])  
@@ -55,11 +55,10 @@ if uploaded_file is not None:
         # Filter columns that exist in the data  
         existing_days = [day for day in ordered_days if day in rounded_pivot_table.columns]  
         rounded_pivot_table = rounded_pivot_table[existing_days]  
-          
         # Create a second pivot table for entries within the last 90 days  
-        ninety_days_ago = datetime.now() - timedelta(days=90)  
+        ninety_days_ago = datetime.now() - timedelta(days=90)
         recent_df = df[df['Date Opened'] >= ninety_days_ago]  
-          
+
         if not recent_df.empty:  
             recent_pivot_table = recent_df.pivot_table(index='Time Opened', columns='Day of Week',   
                                                       values=value_column, aggfunc='mean')  
