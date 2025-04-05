@@ -23,19 +23,22 @@ if uploaded_file is not None:
         if st.checkbox("Show raw data"):  
             st.dataframe(df.head())  
           
-        # Data processing:  
-        
         # Only include rows where 'Legs' contains 'STO'
         df = df[df['Legs'].str.contains('STO', na=False)] 
-        
+
+        # Add filtering based on 'Strategy' column:  
+        # Get the sorted unique strategies for the multiselect widget  
+        unique_strategies = sorted(df['Strategy'].unique())  
+        selected_strategies = st.multiselect('Select Strategy(s) to include', unique_strategies, default=unique_strategies)  
+        # Filter DataFrame based on selected strategies  
+        df = df[df['Strategy'].isin(selected_strategies)]  
+      
         # Convert 'Date Opened' to datetime and create 'Day of Week' column  
         df['Date Opened'] = pd.to_datetime(df['Date Opened'])  
         df['Day of Week'] = df['Date Opened'].dt.day_name()
- 
-          
-        # Calculate Normalized P/L using: (P/L / Premium) * max(Premium)  
-        # max_premium = df['Premium'].max()  
-        df['PCR'] = (df['P/L'] / df['Premium']) # * max_premium  
+           
+        # Calculate PCR  
+        df['PCR'] = (df['P/L'] / df['Premium'])
           
         # Add a radio button to select between P/L and Normalized P/L  
         metric_option = st.radio(  
